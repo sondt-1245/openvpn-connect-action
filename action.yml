@@ -1,4 +1,4 @@
-name: "OpenVPN Connect"
+name: "OpenVPN Connect Action"
 description: "Connect to an OpenVPN server using a composite GitHub Action"
 branding:
   icon: "shield"

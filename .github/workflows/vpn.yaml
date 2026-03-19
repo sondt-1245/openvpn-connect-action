@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Connect VPN
+        uses: ./
+        with:
+          config: ${{ secrets.OPENVPN_CONFIG_FILE }}
+          username: ${{ secrets.OVPN_USERNAME }}
+          password: ${{ secrets.OVPN_PASSWORD }}
+          ping_url: ${{ secrets.PRIVATE_SERVER_IP }}
+
+      - name: Check IP
+        run: curl https://ipinfo.io/ip -vvv
+
+      - name: Ping private server
+        run: ping ${{ secrets.PRIVATE_SERVER_IP }} -c5
+
+      - name: Execute remote SSH commands
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRIVATE_SERVER_IP }}
+          username: ${{ secrets.PRIVATE_SERVER_USERNAME }}
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            whoami
+            cat ~/hello.txt
+
+      - name: Disconnect VPN
+        if: always()
+        uses: ./
+        with:
+          mode: disconnect

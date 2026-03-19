@@ -1,0 +1,107 @@
+name: "OpenVPN Connect"
+description: "Connect to an OpenVPN server using a composite GitHub Action"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  config:
+    description: "OpenVPN config file content (.ovpn)"
+    required: true
+  username:
+    description: "Username for auth-user-pass authentication"
+    required: false
+    default: ""
+  password:
+    description: "Password for auth-user-pass authentication"
+    required: false
+    default: ""
+  client_key:
+    description: "Client private key content"
+    required: false
+    default: ""
+  tls_auth_key:
+    description: "Pre-shared group key for TLS Auth"
+    required: false
+    default: ""
+  tls_crypt_key:
+    description: "Pre-shared group key for TLS Crypt"
+    required: false
+    default: ""
+  tls_crypt_v2_key:
+    description: "Per-client key for TLS Crypt V2"
+    required: false
+    default: ""
+  echo_config:
+    description: "Print the OpenVPN configuration file for debugging (true/false)"
+    required: false
+    default: "true"
+  ping_url:
+    description: "IP or hostname to ping after connection to verify VPN is working"
+    required: false
+    default: ""
+  mode:
+    description: "Action mode: 'connect' to establish VPN, 'disconnect' to tear it down"
+    required: false
+    default: "connect"
+
+outputs:
+  status:
+    description: "VPN connection status (true/false)"
+    value: ${{ steps.vpn_status.outputs.vpn-status }}
+
+runs:
+  using: "composite"
+  steps:
+    # ── Connect flow ──
+    - name: Install OpenVPN
+      if: inputs.mode == 'connect'
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq openvpn openvpn-systemd-resolved > /dev/null
+
+    - name: Connect to VPN
+      if: inputs.mode == 'connect'
+      shell: bash
+      env:
+        OVPN_CONFIG: ${{ inputs.config }}
+        OVPN_USERNAME: ${{ inputs.username }}
+        OVPN_PASSWORD: ${{ inputs.password }}
+        OVPN_CLIENT_KEY: ${{ inputs.client_key }}
+        OVPN_TLS_AUTH_KEY: ${{ inputs.tls_auth_key }}
+        OVPN_TLS_CRYPT_KEY: ${{ inputs.tls_crypt_key }}
+        OVPN_TLS_CRYPT_V2_KEY: ${{ inputs.tls_crypt_v2_key }}
+        OVPN_ECHO_CONFIG: ${{ inputs.echo_config }}
+        OVPN_PING_URL: ${{ inputs.ping_url }}
+      run: |
+        chmod +x "${{ github.action_path }}/scripts/connect.sh"
+        "${{ github.action_path }}/scripts/connect.sh"
+
+    - name: VPN Status
+      id: vpn_status
+      if: inputs.mode == 'connect'
+      shell: bash
+      env:
+        OVPN_PING_URL: ${{ inputs.ping_url }}
+      run: |
+        if [ -n "$OVPN_PING_URL" ]; then
+          if ping -c 3 -W 5 "$OVPN_PING_URL" > /dev/null 2>&1; then
+            echo "vpn-status=true" >> "$GITHUB_OUTPUT"
+            echo "VPN connection verified via ping to $OVPN_PING_URL"
+          else
+            echo "vpn-status=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::VPN ping verification failed for $OVPN_PING_URL"
+          fi
+        else
+          echo "vpn-status=true" >> "$GITHUB_OUTPUT"
+          echo "VPN started (no ping_url provided to verify)"
+        fi
+
+    # ── Disconnect flow ──
+    - name: Disconnect VPN
+      if: inputs.mode == 'disconnect'
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/scripts/disconnect.sh"
+        "${{ github.action_path }}/scripts/disconnect.sh"

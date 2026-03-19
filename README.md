@@ -47,7 +47,7 @@ steps:
     uses: actions/checkout@v4
 
   - name: Connect VPN
-    uses: your-org/openvpn-action@v1
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       config: ${{ secrets.OPENVPN_CONFIG_FILE }}
       username: ${{ secrets.OVPN_USERNAME }}
@@ -59,7 +59,7 @@ steps:
 
   - name: Disconnect VPN
     if: always()
-    uses: your-org/openvpn-action@v1
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       mode: disconnect
 ```
@@ -74,14 +74,14 @@ steps:
     uses: actions/checkout@v4
 
   - name: Connect VPN
-    uses: your-org/openvpn-action@v1
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       config: ${{ secrets.OPENVPN_CONFIG_FILE }}
       ping_url: ${{ secrets.PRIVATE_SERVER_IP }}
 
   - name: Disconnect VPN
     if: always()
-    uses: your-org/openvpn-action@v1
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       mode: disconnect
 ```
@@ -94,7 +94,7 @@ steps:
     uses: actions/checkout@v4
 
   - name: Connect VPN
-    uses: your-org/openvpn-action@v1
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       config: ${{ secrets.OPENVPN_CONFIG_FILE }}
       client_key: ${{ secrets.OVPN_CLIENT_KEY }}
@@ -106,32 +106,7 @@ steps:
 
   - name: Disconnect VPN
     if: always()
-    uses: your-org/openvpn-action@v1
-    with:
-      mode: disconnect
-```
-
-### From the same repository
-
-```yaml
-steps:
-  - name: Checkout
-    uses: actions/checkout@v4
-
-  - name: Connect VPN
-    uses: ./
-    with:
-      config: ${{ secrets.OPENVPN_CONFIG_FILE }}
-      username: ${{ secrets.OVPN_USERNAME }}
-      password: ${{ secrets.OVPN_PASSWORD }}
-      ping_url: ${{ secrets.PRIVATE_SERVER_IP }}
-
-  - name: Check public IP
-    run: curl https://ipinfo.io/ip
-
-  - name: Disconnect VPN
-    if: always()
-    uses: ./
+    uses: sondt-1245/openvpn-connect-action@v1
     with:
       mode: disconnect
 ```
